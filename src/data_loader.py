@@ -20,12 +20,16 @@ def get_config(config_path="config.yaml"):
 
 def load_data():
     """
-    Loads the Hugging Face dataset (zeroshot/twitter-financial-news-sentiment)
-    and caches the splits as CSV files under the configured data directory.
+    Loads the training and validation datasets.
+    First checks if the user's custom Twitter dataset files exist:
+        - sent_train.csv
+        - sent_valid.xlsx
+    If found, loads them locally. Otherwise, falls back to train_raw.csv
+    and validation_raw.csv, or downloads from Hugging Face.
     
     Returns:
-        train_df (pd.DataFrame): Raw training dataset
-        val_df (pd.DataFrame): Raw validation dataset
+        train_df (pd.DataFrame): Training dataset
+        val_df (pd.DataFrame): Validation dataset
     """
     config = get_config()
     data_dir = config.get("data_dir", "./data")
@@ -36,10 +40,17 @@ def load_data():
     
     os.makedirs(abs_data_dir, exist_ok=True)
     
+    custom_train_path = os.path.join(abs_data_dir, "sent_train.csv")
+    custom_val_path = os.path.join(abs_data_dir, "sent_valid.xlsx")
+    
     train_path = os.path.join(abs_data_dir, "train_raw.csv")
     val_path = os.path.join(abs_data_dir, "validation_raw.csv")
     
-    if os.path.exists(train_path) and os.path.exists(val_path):
+    if os.path.exists(custom_train_path) and os.path.exists(custom_val_path):
+        print(f"Loading custom Twitter dataset from {abs_data_dir}...")
+        train_df = pd.read_csv(custom_train_path)
+        val_df = pd.read_excel(custom_val_path)
+    elif os.path.exists(train_path) and os.path.exists(val_path):
         print(f"Loading cached dataset from {abs_data_dir}...")
         train_df = pd.read_csv(train_path)
         val_df = pd.read_csv(val_path)

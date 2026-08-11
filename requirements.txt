@@ -12,3 +12,4 @@ tqdm>=4.65.0
 accelerate>=0.20.0
 ipykernel
 notebook
+openpyxl
