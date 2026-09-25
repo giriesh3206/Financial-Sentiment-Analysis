@@ -18,7 +18,7 @@ from transformers import (
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from src.data_loader import load_data, get_config
-from src.evaluation.eval_utils import compute_metrics, plot_confusion_matrix
+from src.evaluation.eval_utils import (\n    compute_metrics,\n    plot_confusion_matrix,\n    save_classification_report,\n    save_error_analysis,\n)
 from src.training.train_rnn_lstm import log_experiment
 
 def main():
