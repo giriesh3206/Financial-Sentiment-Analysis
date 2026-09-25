@@ -235,31 +235,26 @@ def main():
         print(f"{k.capitalize()}: {v:.4f}")
         
     # Save class-wise metrics and representative validation errors.
-    report_path = os.path.join(
-        config["reports_dir"],
-        f"classification_report_{args.model}.csv",
-    )
-    error_path = os.path.join(
-        config["reports_dir"],
-        f"error_analysis_{args.model}.csv",
-    )
     class_names = [
         config["labels"][i] for i in sorted(config["labels"].keys())
     ]
-
-    save_classification_report(
+    report_path = save_classification_report(
         targets,
         preds,
         class_names,
-        report_path,
+        args.model,
+        config["reports_dir"],
     )
-    save_error_analysis(
+    error_path, error_count = save_error_analysis(
         val_df["text"],
         targets,
         preds,
         class_names,
-        error_path,
+        args.model,
+        config["reports_dir"],
     )
+    print(f"Saved class-wise report to {report_path}")
+    print(f"Saved {error_count} misclassified examples to {error_path}")
 
     # Plot & Save Confusion Matrix
     plot_confusion_matrix(
