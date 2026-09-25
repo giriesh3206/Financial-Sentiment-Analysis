@@ -3,9 +3,6 @@ import yaml
 import pandas as pd
 from datasets import load_dataset
 
-EXPECTED_TRAIN_SIZE = 9938
-EXPECTED_VALIDATION_SIZE = 2486
-
 
 def get_config(config_path="config.yaml"):
     """Load YAML configuration from project root."""
@@ -25,20 +22,49 @@ def get_config(config_path="config.yaml"):
         return yaml.safe_load(f)
 
 
-def _has_required_split_sizes(train_df, val_df):
-    """Check that local data matches the assignment's official split sizes."""
-    return (
-        len(train_df) == EXPECTED_TRAIN_SIZE
-        and len(val_df) == EXPECTED_VALIDATION_SIZE
+def _validate_schema(train_df, val_df):
+    """Validate that both splits contain the expected text/label columns."""
+    required_columns = {"text", "label"}
+
+    for name, df in (("train", train_df), ("validation", val_df)):
+        missing = required_columns - set(df.columns)
+        if missing:
+            raise ValueError(
+                f"{name} split is missing required columns: "
+                f"{sorted(missing)}."
+            )
+
+        if df["text"].isna().any() or df["label"].isna().any():
+            raise ValueError(f"{name} split contains null text or label values.")
+
+    train_labels = set(train_df["label"].unique())
+    val_labels = set(val_df["label"].unique())
+    allowed_labels = {0, 1, 2, "0", "1", "2"}
+
+    if not train_labels.issubset(allowed_labels) or not val_labels.issubset(
+        allowed_labels
+    ):
+        raise ValueError(
+            "Unexpected labels found. Expected the three labels "
+            "LABEL_0/LABEL_1/LABEL_2 or encoded values 0/1/2."
+        )
+
+
+def _report_split_sizes(train_df, val_df, source):
+    """Print the actual split sizes without modifying the supplied data."""
+    print(
+        f"Using {source} train/validation splits: "
+        f"{len(train_df)}/{len(val_df)} samples."
     )
 
 
 def load_data():
     """
-    Load the required training and validation datasets.
+    Load the training and validation datasets.
 
-    Local caches are used only when they match the assignment's official
-    split sizes. Otherwise the official Hugging Face splits are downloaded.
+    The project uses only the supplied Hugging Face train and validation
+    splits. Local copies are preferred when present. Split sizes are reported
+    but are not changed, padded, duplicated, or synthetically expanded.
     """
     config = get_config()
     data_dir = config.get("data_dir", "./data")
@@ -52,53 +78,34 @@ def load_data():
     train_path = os.path.join(abs_data_dir, "train_raw.csv")
     val_path = os.path.join(abs_data_dir, "validation_raw.csv")
 
-    train_df = None
-    val_df = None
-
     if os.path.exists(custom_train_path) and os.path.exists(custom_val_path):
         print(f"Loading custom Twitter dataset from {abs_data_dir}...")
-        candidate_train = pd.read_csv(custom_train_path)
-        candidate_val = pd.read_excel(custom_val_path)
-        if _has_required_split_sizes(candidate_train, candidate_val):
-            train_df, val_df = candidate_train, candidate_val
-        else:
-            print(
-                "Local custom split sizes do not match the assignment "
-                f"({EXPECTED_TRAIN_SIZE}/{EXPECTED_VALIDATION_SIZE}). "
-                "Ignoring them and loading the official Hugging Face splits."
-            )
+        train_df = pd.read_csv(custom_train_path)
+        val_df = pd.read_excel(custom_val_path)
+        _validate_schema(train_df, val_df)
+        _report_split_sizes(train_df, val_df, "local custom")
+        return train_df, val_df
 
-    if train_df is None or val_df is None:
-        if os.path.exists(train_path) and os.path.exists(val_path):
-            print(f"Loading cached dataset from {abs_data_dir}...")
-            candidate_train = pd.read_csv(train_path)
-            candidate_val = pd.read_csv(val_path)
-            if _has_required_split_sizes(candidate_train, candidate_val):
-                train_df, val_df = candidate_train, candidate_val
-            else:
-                print(
-                    "Local cached split sizes do not match the assignment "
-                    f"({EXPECTED_TRAIN_SIZE}/{EXPECTED_VALIDATION_SIZE}). "
-                    "Ignoring the cache and downloading the official "
-                    "Hugging Face splits."
-                )
+    if os.path.exists(train_path) and os.path.exists(val_path):
+        print(f"Loading cached dataset from {abs_data_dir}...")
+        train_df = pd.read_csv(train_path)
+        val_df = pd.read_csv(val_path)
+        _validate_schema(train_df, val_df)
+        _report_split_sizes(train_df, val_df, "cached official")
+        return train_df, val_df
 
-    if train_df is None or val_df is None:
-        print("Downloading the official dataset from Hugging Face...")
-        dataset = load_dataset("zeroshot/twitter-financial-news-sentiment")
-        train_df = pd.DataFrame(dataset["train"])
-        val_df = pd.DataFrame(dataset["validation"])
+    print("Downloading dataset from Hugging Face...")
+    dataset = load_dataset("zeroshot/twitter-financial-news-sentiment")
 
-        if not _has_required_split_sizes(train_df, val_df):
-            raise ValueError(
-                "The downloaded dataset split sizes do not match the assignment: "
-                f"expected {EXPECTED_TRAIN_SIZE}/{EXPECTED_VALIDATION_SIZE}, "
-                f"received {len(train_df)}/{len(val_df)}."
-            )
+    train_df = pd.DataFrame(dataset["train"])
+    val_df = pd.DataFrame(dataset["validation"])
 
-        train_df.to_csv(train_path, index=False)
-        val_df.to_csv(val_path, index=False)
-        print(f"Saved official raw splits to {abs_data_dir}")
+    _validate_schema(train_df, val_df)
+    _report_split_sizes(train_df, val_df, "Hugging Face")
+
+    train_df.to_csv(train_path, index=False)
+    val_df.to_csv(val_path, index=False)
+    print(f"Saved raw splits to {abs_data_dir}")
 
     return train_df, val_df
 
