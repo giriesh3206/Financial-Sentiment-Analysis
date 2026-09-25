@@ -39,14 +39,13 @@ The project uses the required Hugging Face dataset:
 
 \`zeroshot/twitter-financial-news-sentiment\`
 
-The loader enforces the assignment's official split sizes:
+The assignment specification lists:
 
 - **Training:** 9,938
 - **Validation:** 2,486
 - **Labels:** Bearish, Bullish, Neutral
-- **Only the provided train and validation splits are used.**
 
-If an old local cache has different split sizes, the loader ignores it and downloads the official splits again. This prevents accidentally benchmarking a reduced or modified dataset.
+The currently retrieved Hugging Face dataset version provides **9,543 training** and **2,388 validation** records. The project uses those supplied train/validation splits exactly as provided. It does **not** duplicate, synthesize, pad, or otherwise alter records to force the assignment's stated counts. The loader validates the required text/label schema and reports the actual split sizes used for every run.
 
 ## Pipeline
 
@@ -189,7 +188,9 @@ The report should be kept to **2 pages** for submission.
 
 ## Important Benchmark Note
 
-Earlier development runs in this repository used a smaller cached split (9,543 training / 2,388 validation). The data loader has now been changed to enforce the assignment's required **9,938 / 2,486** split. Therefore, the final benchmark numbers and PDF report must be regenerated after the models are retrained on the official splits.
+The assignment specification states 9,938 training and 2,486 validation documents, while the currently retrieved Hugging Face dataset version exposes 9,543 training and 2,388 validation documents. The repository records this discrepancy rather than altering the dataset to match the stated counts.
+
+All final RNN, LSTM, and FinBERT benchmark runs must use the same supplied train/validation splits. The final experiment log and PDF report should therefore report **9,543 / 2,388** as the actual evaluation population used.
 
 ## Reproducibility
 
