@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # Add parent directory to sys.path so we can import src modules
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__))))
 
-from src.data_loader import get_config
+from src.data_loader import get_config, load_data
 from src.inference import SentimentPredictor
 
 # Page Configuration
@@ -78,7 +78,7 @@ st.markdown("""
         font-weight: 700;
     }
 </style>
-""", unsafe_allowed_html=True)
+""", unsafe_allow_html=True)
 
 st.title("📊 Financial Sentiment Classification Hub")
 st.markdown("A deep learning benchmarking system evaluating **RNN, LSTM, and FinBERT** models on financial tweet data.")
