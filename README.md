@@ -1,105 +1,201 @@
 # Financial News Sentiment Classification & Benchmark Hub
 
-A pair-programming benchmarking portfolio project comparing **RNN, LSTM, and FinBERT** architectures for a 3-class financial sentiment classification task (Bearish vs. Bullish vs. Neutral). Deployed via a modern **Streamlit** dashboard.
+A 3-class financial sentiment classification project comparing **Simple RNN, LSTM, and FinBERT** models for Bearish, Bullish, and Neutral financial tweets. The project includes EDA, leakage-safe preprocessing, model training, quantitative evaluation, error analysis, and a Streamlit inference dashboard.
 
-## 🚀 Repository Structure
-```
+## Repository Structure
+
+\`\`\`
 financial-news-sentiment/
-├── data/                    # Local CSV cache of dataset splits
+├── data/                    # Local cache of the official train/validation splits
 ├── notebooks/
-│   ├── phase1_eda.ipynb     # Interactive EDA notebook
-│   └── financial_sentiment_benchmarking.ipynb  # Master Colab/Local benchmarking notebook
+│   ├── phase1_eda.ipynb
+│   └── financial_sentiment_benchmarking.ipynb
 ├── src/
 │   ├── models/
-│   │   ├── rnn.py           # PyTorch RNNClassifier
-│   │   └── lstm.py          # PyTorch LSTMClassifier
+│   │   ├── rnn.py
+│   │   └── lstm.py
 │   ├── training/
-│   │   ├── train_rnn_lstm.py # Generic baseline training script
-│   │   └── train_finbert.py  # Trainer script for ProsusAI/finbert
+│   │   ├── train_rnn_lstm.py
+│   │   └── train_finbert.py
 │   ├── evaluation/
-│   │   └── eval_utils.py    # Metric calculators & confusion matrix plotters
-│   ├── data_loader.py       # Hugging Face downloader & local cacher
-│   ├── preprocessing.py     # Cleaners, tokenizers, Vocabulary class
-│   └── phase1_eda.py        # Standalone EDA CLI script
-├── models/                  # Saved weights (*_best.pt) and vocab files
-├── reports/
-│   └── experiment_log.csv   # Unified CSV experiment metrics logger
-├── figures/                 # Confusion matrices and distribution plots
-├── app.py                   # Streamlit inference dashboard
-├── config.yaml              # Hyperparameters and folder paths
-├── requirements.txt         # Pinned python packages
-├── LICENSE                  # MIT License
-└── README.md                # Project documentation
-```
+│   │   ├── eval_utils.py
+│   │   └── generate_comparison.py
+│   ├── data_loader.py
+│   ├── preprocessing.py
+│   ├── inference.py
+│   └── phase1_eda.py
+├── models/                  # Local model checkpoints and vocabularies
+├── reports/                 # Metrics, class-wise reports, and error analysis
+├── figures/                 # EDA and confusion-matrix figures
+├── app.py                  # Streamlit dashboard
+├── config.yaml
+├── requirements.txt
+└── README.md
+\`\`\`
 
----
+## Dataset
 
-## 📊 Benchmark Results (Real Measured Metrics)
+The project uses the required Hugging Face dataset:
 
-The models were evaluated on the **Twitter Financial News Sentiment** dataset (Hugging Face: `zeroshot/twitter-financial-news-sentiment`).
+\`zeroshot/twitter-financial-news-sentiment\`
 
-### 1. Dataset Statistics (Phase 1 EDA)
-- **Train split size:** 9,543 samples (79.98%)
-- **Validation split size:** 2,388 samples (20.02%)
-- **Train/Val text overlap:** 0.00% (No data leakage)
-- **Class Imbalance:**
-  - `LABEL_0` (Bearish): 15.11%
-  - `LABEL_1` (Bullish): 20.15%
-  - `LABEL_2` (Neutral): **64.74%**
-  
-*Note: Due to the 65% Neutral class dominance, Accuracy is naturally high. **Macro F1** is utilized as the primary metric for comparative benchmarks.*
+The loader enforces the assignment's official split sizes:
 
-### 2. Model Performance Benchmarks
-RNN and LSTM baseline models were trained in this workspace on CPU. The FinBERT model was fine-tuned in this workspace on an **NVIDIA GeForce RTX 4050 Laptop GPU**:
+- **Training:** 9,938
+- **Validation:** 2,486
+- **Labels:** Bearish, Bullish, Neutral
+- **Only the provided train and validation splits are used.**
 
-| Model Architecture | Epochs | Train Loss | Val Loss | Val Accuracy | Val Macro F1 | Train Time |
-|---|---|---|---|---|---|---|
-| **Simple RNN** | 13 | 0.4670 | 0.5608 | 78.48% | 66.54% | 213.51s |
-| **LSTM** | 11 | 0.4039 | 0.5190 | 81.24% | 72.14% | 179.48s |
-| **FinBERT** | 3 | **0.3165** | **0.4728** | **87.65%** | **83.67%** | **372.63s** |
+If an old local cache has different split sizes, the loader ignores it and downloads the official splits again. This prevents accidentally benchmarking a reduced or modified dataset.
 
----
+## Pipeline
 
-## 🛠️ Getting Started & Local Usage
+\`\`\`
+Hugging Face dataset
+        ↓
+EDA + data-quality checks
+        ↓
+URL / mention / whitespace cleaning
+        ↓
+Ticker-aware tokenization
+        ↓
+Vocabulary built from TRAIN only
+        ↓
+Simple RNN + LSTM training
+        ↓
+Validation accuracy / macro F1 / class-wise metrics
+        ↓
+Confusion matrices + misclassification analysis
 
-### 1. Set Up Environment & Install Requirements
-Create a virtual environment and install the requirements:
-```bash
+Same official train/validation splits
+        ↓
+FinBERT fine-tuning
+        ↓
+Validation metrics + confusion matrix + error analysis
+        ↓
+Model comparison
+        ↓
+Streamlit inference dashboard
+\`\`\`
+
+## Evaluation Outputs
+
+After training, the project generates:
+
+- Overall validation accuracy
+- Macro F1
+- Macro precision and recall
+- Class-wise precision, recall, F1 and support
+- Confusion matrices
+- CSV files containing misclassified examples for qualitative error analysis
+- Unified experiment log
+
+Example generated report files:
+
+\`\`\`
+reports/
+├── experiment_log.csv
+├── classification_report_rnn.csv
+├── classification_report_lstm.csv
+├── classification_report_finbert.csv
+├── error_analysis_rnn.csv
+├── error_analysis_lstm.csv
+└── error_analysis_finbert.csv
+\`\`\`
+
+The error-analysis CSVs contain the original text, actual class, and predicted class so the report can discuss concrete model failures rather than only reporting aggregate numbers.
+
+## Model Comparison
+
+The project compares:
+
+1. **Simple RNN:** Embedding → 2-layer RNN → mean pooling → classifier
+2. **LSTM:** Embedding → 2-layer LSTM → mean pooling → classifier
+3. **FinBERT:** Pretrained \`ProsusAI/finbert\` fine-tuned for the three required classes
+
+The LSTM/RNN comparison is interpreted in terms of recurrent architecture and sequence-memory behavior. FinBERT is compared quantitatively against the baselines using the same official validation split.
+
+## Running the Project
+
+### 1. Install dependencies
+
+\`\`\`bash
 python -m venv .venv
-.venv\Scripts\activate   # On Windows
+.venv\\Scripts\\activate
 pip install -r requirements.txt
-```
+\`\`\`
 
-### 2. Run EDA CLI
-Run the exploratory analysis CLI:
-```bash
+### 2. Run EDA
+
+\`\`\`bash
 python src/phase1_eda.py
-```
+\`\`\`
 
-### 3. Train Models
-Train the baseline models locally:
-```bash
+### 3. Train the RNN and LSTM
+
+\`\`\`bash
 python src/training/train_rnn_lstm.py --model rnn
 python src/training/train_rnn_lstm.py --model lstm
-```
+\`\`\`
 
-### 4. Run Streamlit Dashboard
-Launch the dashboard for real-time model inference and metric visualization:
-```bash
+### 4. Fine-tune FinBERT
+
+For a GPU environment:
+
+\`\`\`bash
+python src/training/train_finbert.py
+\`\`\`
+
+A reduced run can be used only for development/profiling:
+
+\`\`\`bash
+python src/training/train_finbert.py --subset_size 1000
+\`\`\`
+
+Do not use a subset run for the final project benchmark.
+
+### 5. Run Streamlit
+
+\`\`\`bash
 streamlit run app.py
-```
+\`\`\`
 
----
+The dashboard provides:
 
-## ☁️ Running on Google Colab (GPU training)
-To train the GPU-heavy **FinBERT** model or run the code on Google Colab:
-1. Upload this folder to your Google Drive.
-2. Open [notebooks/financial_sentiment_benchmarking.ipynb](file:///notebooks/financial_sentiment_benchmarking.ipynb) in Colab.
-3. Enable GPU acceleration (`Runtime` -> `Change runtime type` -> select `T4 GPU`).
-4. Execute the Colab setup block to mount Drive and install requirements.
-5. Run the FinBERT training block; the script will fine-tune the model, save weights directly to your Google Drive, and log benchmarks.
+- RNN/LSTM/FinBERT model selection
+- financial text input
+- predicted sentiment
+- confidence
+- class probabilities
+- probability bar chart
+- validation class-distribution chart
+- model accuracy and macro-F1 comparison
+- confusion matrices
 
----
+## Required 2-Page Comparison Report
 
-## ⚖️ License
-This project is licensed under the MIT License - see the [LICENSE](file:///LICENSE) file for details.
+After running all three final models on the official splits, generate the comparison report from the measured experiment files. The report should contain:
+
+- dataset and methodology
+- RNN vs LSTM metrics
+- RNN/LSTM interpretation
+- FinBERT comparison
+- class-wise precision/recall/F1
+- confusion matrices
+- representative error-analysis examples
+- Streamlit description/screenshot
+
+The report should be kept to **2 pages** for submission.
+
+## Important Benchmark Note
+
+Earlier development runs in this repository used a smaller cached split (9,543 training / 2,388 validation). The data loader has now been changed to enforce the assignment's required **9,938 / 2,486** split. Therefore, the final benchmark numbers and PDF report must be regenerated after the models are retrained on the official splits.
+
+## Reproducibility
+
+- Fixed random seed: 42
+- RNN/LSTM vocabulary is built from training data only
+- Validation data is never used to build the vocabulary
+- Early stopping is enabled
+- FinBERT uses validation-based model selection
+- Experiment parameters and metrics are logged for comparison
