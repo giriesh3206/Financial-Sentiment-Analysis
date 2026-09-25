@@ -3,6 +3,7 @@ import sys
 import argparse
 import time
 import csv
+import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
@@ -17,7 +18,12 @@ from src.data_loader import load_data, get_config, config_path_lookup
 from src.preprocessing import Vocabulary, clean_text
 from src.models.rnn import RNNClassifier
 from src.models.lstm import LSTMClassifier
-from src.evaluation.eval_utils import (\n    compute_metrics,\n    plot_confusion_matrix,\n    save_classification_report,\n    save_error_analysis,\n)
+from src.evaluation.eval_utils import (
+    compute_metrics,
+    plot_confusion_matrix,
+    save_classification_report,
+    save_error_analysis,
+)
 
 class FinancialTweetsDataset(Dataset):
     def __init__(self, texts, labels, vocab, max_len=64):
@@ -228,12 +234,53 @@ def main():
     for k, v in final_metrics.items():
         print(f"{k.capitalize()}: {v:.4f}")
         
+    # Save class-wise metrics and representative validation errors.
+    report_path = os.path.join(
+        config["reports_dir"],
+        f"classification_report_{args.model}.csv",
+    )
+    error_path = os.path.join(
+        config["reports_dir"],
+        f"error_analysis_{args.model}.csv",
+    )
+    class_names = [
+        config["labels"][i] for i in sorted(config["labels"].keys())
+    ]
+
+    save_classification_report(
+        targets,
+        preds,
+        class_names,
+        report_path,
+    )
+    save_error_analysis(
+        val_df["text"],
+        targets,
+        preds,
+        class_names,
+        error_path,
+    )
+
     # Plot & Save Confusion Matrix
-    class_names = [config["labels"][i] for i in sorted(config["labels"].keys())]
-    plot_confusion_matrix(targets, preds, class_names, args.model.upper(), config["figures_dir"])
-    
+    plot_confusion_matrix(
+        targets,
+        preds,
+        class_names,
+        args.model.upper(),
+        config["figures_dir"],
+    )
+
+    print("\n--- Class-wise Validation Metrics ---")
+    print(pd.read_csv(report_path).to_string(index=False))
+
     # Log to Experiment Log
-    log_experiment(args.model.upper(), config, total_train_time, final_metrics, os.path.join(config["reports_dir"], "experiment_log.csv"))
+    log_experiment(
+        args.model.upper(),
+        config,
+        total_train_time,
+        final_metrics,
+        os.path.join(config["reports_dir"], "experiment_log.csv"),
+    )
 
 if __name__ == "__main__":
     main()
