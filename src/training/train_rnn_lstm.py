@@ -17,7 +17,7 @@ from src.data_loader import load_data, get_config, config_path_lookup
 from src.preprocessing import Vocabulary, clean_text
 from src.models.rnn import RNNClassifier
 from src.models.lstm import LSTMClassifier
-from src.evaluation.eval_utils import compute_metrics, plot_confusion_matrix
+from src.evaluation.eval_utils import (\n    compute_metrics,\n    plot_confusion_matrix,\n    save_classification_report,\n    save_error_analysis,\n)
 
 class FinancialTweetsDataset(Dataset):
     def __init__(self, texts, labels, vocab, max_len=64):
