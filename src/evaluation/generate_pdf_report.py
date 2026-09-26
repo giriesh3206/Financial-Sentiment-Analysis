@@ -30,7 +30,7 @@ def build_report():
     if log_df.empty:
         raise FileNotFoundError(
             "No experiment_log.csv found. Train RNN, LSTM, and FinBERT on the "
-            "official 9,938/2,486 splits before generating the final report."
+            "supplied 9,543/2,388 train/validation splits before generating the final report."
         )
 
     styles = getSampleStyleSheet()
@@ -114,7 +114,7 @@ def build_report():
         "FinBERT starts from a pretrained transformer representation and is "
         "fine-tuned for the three financial sentiment classes. The comparison "
         "table reports its measured validation performance against the recurrent "
-        "baselines using the same official validation split.",
+        "baselines using the same 2,388-record validation split.",
         styles["Small"],
     ))
 
