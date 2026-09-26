@@ -84,7 +84,7 @@ st.title("📊 Financial Sentiment Classification Hub")
 st.markdown("A deep learning benchmarking system evaluating **RNN, LSTM, and FinBERT** models on financial tweet data.")
 
 # Sidebar Configuration
-st.sidebar.image("https://img.icons8.com/color/96/financial-analytics.png", width=90)
+st.sidebar.markdown("## 📊 Financial Analytics")
 st.sidebar.title("Configuration")
 
 # Model Selection
@@ -119,6 +119,17 @@ def get_predictor(model_name):
         return None
 
 predictor = get_predictor(selected_model_type) if model_trained else None
+
+@st.cache_data
+def get_validation_distribution():
+    """Return validation-set sentiment counts for the dashboard."""
+    _, val_df = load_data()
+    label_map = {0: "Bearish", 1: "Bullish", 2: "Neutral"}
+    labels = pd.to_numeric(val_df["label"], errors="coerce").map(label_map)
+    counts = labels.value_counts().reindex(
+        ["Bearish", "Bullish", "Neutral"], fill_value=0
+    )
+    return counts.rename_axis("Sentiment Class").reset_index(name="Count")
 
 # Sidebar details
 st.sidebar.markdown("---")
@@ -261,6 +272,25 @@ with tab2:
     else:
         st.info("No benchmark history found. Once models are trained, metrics logged in `reports/experiment_log.csv` will be displayed here.")
         
+    # Validation-set class distribution required by the project specification.
+    st.subheader("Validation Set Sentiment Distribution")
+    st.caption("Class counts in the supplied validation split used for model evaluation.")
+    try:
+        distribution_df = get_validation_distribution()
+        st.bar_chart(
+            distribution_df,
+            x="Sentiment Class",
+            y="Count",
+            height=300,
+        )
+        st.dataframe(
+            distribution_df,
+            use_container_width=True,
+            hide_index=True,
+        )
+    except Exception as e:
+        st.warning(f"Could not load validation-set distribution: {e}")
+
     # Displays confusion matrices
     st.subheader("Confusion Matrices")
     fig_dir = config.get("figures_dir", "./figures")
