@@ -203,7 +203,7 @@ with tab1:
                     <div class="metric-title">Predicted Sentiment</div>
                     <div class="{val_style}">{pred_label}</div>
                 </div>
-                """, unsafe_allowed_html=True)
+                """, unsafe_allow_html=True)
                 
             with c2:
                 st.markdown(f"""
@@ -211,7 +211,7 @@ with tab1:
                     <div class="metric-title">Confidence Score</div>
                     <div class="metric-val-neutral">{confidence * 100:.1f}%</div>
                 </div>
-                """, unsafe_allowed_html=True)
+                """, unsafe_allow_html=True)
                 
             with c3:
                 st.markdown(f"""
@@ -219,7 +219,7 @@ with tab1:
                     <div class="metric-title">Inference Speed</div>
                     <div class="metric-val-neutral">{inf_time:.2f} ms</div>
                 </div>
-                """, unsafe_allowed_html=True)
+                """, unsafe_allow_html=True)
                 
             # Class probabilities visualization
             st.markdown("### Sentiment Probabilities")
